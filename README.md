@@ -59,7 +59,7 @@ Pastikan tersedia:
 
 - **Python 3.12** (direkomendasikan) dan Git.
 - Webcam yang dapat digunakan.
-- File `models/random_forest.joblib` dari pemilik/pengelola proyek. File ini belum tersedia sebagai unduhan otomatis dari repository.
+- Model Random Forest yang dapat diunduh melalui [GitHub Releases](https://github.com/hadyannabil/bisindo-alphabet-recognition/releases/tag/rf-umn-baseline-v1).
 - File `models/hand_landmarker.task` dan `models/metrics.json` yang sudah ada dalam repository.
 
 ### 2. Unduh repository
@@ -71,7 +71,6 @@ git clone https://github.com/hadyannabil/bisindo-alphabet-recognition.git
 cd bisindo-alphabet-recognition
 ```
 
-> Gunakan branch yang berisi versi aplikasi terbaru apabila perubahan belum digabungkan ke `main`.
 
 ### 3. Buat virtual environment dan instal dependensi
 
@@ -81,9 +80,11 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-### 4. Letakkan model klasifikasi
+### 4. Unduh model Random Forest
 
-Simpan file yang diperoleh dari pengelola proyek di:
+Unduh **[random_forest.joblib](https://github.com/hadyannabil/bisindo-alphabet-recognition/releases/download/rf-umn-baseline-v1/random_forest.joblib)** melalui [GitHub Releases](https://github.com/hadyannabil/bisindo-alphabet-recognition/releases/tag/rf-umn-baseline-v1).
+
+Setelah selesai, letakkan file di:
 
 ```text
 models/random_forest.joblib
