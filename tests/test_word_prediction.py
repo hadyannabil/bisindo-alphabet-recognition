@@ -5,7 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from bisindo_app.core import TextComposer
-from bisindo_app.word_prediction import apply_suggestion, suggest_words
+from bisindo_app.word_prediction import DEFAULT_VOCABULARY, apply_suggestion, load_vocabulary, suggest_words
 
 def test_suggest_words_empty_text():
     """Uji teks kosong dan None mengembalikan list kosong."""
@@ -112,3 +112,19 @@ def test_full_flow_with_composer():
     chosen = suggestions[0]
     composer.replace_last_word(chosen)
     assert composer.text == "saya makan"
+
+
+def test_load_vocabulary_large_corpus():
+    """Uji pemuatan kosakata otomatis dari file korpus eksternal."""
+    vocab = load_vocabulary()
+    assert len(vocab) > 10000
+    assert "makan" in vocab
+    assert "indonesia" in vocab
+    assert "komputer" in vocab
+
+
+def test_load_vocabulary_fallback():
+    """Uji fallback ke DEFAULT_VOCABULARY jika file korpus tidak ada."""
+    fallback = load_vocabulary("non_existent_corpus_file.txt")
+    assert fallback == DEFAULT_VOCABULARY
+

@@ -23,12 +23,36 @@ Keterbatasan:
 """
 from __future__ import annotations
 
+from functools import lru_cache
+from pathlib import Path
 from typing import Sequence
 
-# Kosakata frekuensi tinggi bahasa Indonesia, diurutkan berdasarkan prioritas/relevansi.
-# Untuk prefiks 'mak', urutan kata diatur: makan, makanan, makna, makin sesuai spesifikasi alur.
+DICTIONARY_PATH = Path(__file__).resolve().parent / "data" / "indonesian_words.txt"
+
+
+@lru_cache(maxsize=4)
+def load_vocabulary(filepath: Path | str | None = None) -> list[str]:
+    """Muat daftar kosakata bahasa Indonesia dari file korpus teks.
+
+    Mendukung pemuatan hingga puluhan ribu kata secara otomatis dengan caching di memori.
+    Jika file tidak ditemukan atau gagal dibaca, otomatis fallback ke DEFAULT_VOCABULARY.
+    """
+    path = DICTIONARY_PATH if filepath is None else Path(filepath)
+    if not path.exists():
+        return DEFAULT_VOCABULARY
+
+    try:
+        words: list[str] = []
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                w = line.strip().lower()
+                if w and w.isalpha():
+                    words.append(w)
+        return words if words else DEFAULT_VOCABULARY
+    except Exception:
+        return DEFAULT_VOCABULARY
+
 DEFAULT_VOCABULARY: list[str] = [
-    # Prioritas contoh & kata sangat umum
     "makan", "makanan", "makna", "makin", "maksud", "makmur", "maksimal", "makhluk",
     "saya", "kamu", "dia", "kita", "mereka", "kami", "anda", "kalian", "ia", "dirinya",
     "ini", "itu", "sini", "situ", "sana",
@@ -191,21 +215,9 @@ def suggest_words(
     limit: int = 4,
     vocabulary: Sequence[str] | None = None,
 ) -> list[str]:
-    """Kembalikan maksimal `limit` kandidat kata tanpa mengubah teks input.
-
-    Parameters:
-        formed_text: Teks yang sedang tersusun (dari TextComposer.text atau input teks).
-        limit: Jumlah maksimal saran kata yang dikembalikan (default: 4).
-        vocabulary: Daftar kosakata opsional untuk pencarian (default: DEFAULT_VOCABULARY).
-
-    Returns:
-        List string saran kata tanpa duplikat. Mengembalikan list kosong jika teks kosong,
-        token terakhir kosong (misalnya tepat setelah spasi), atau tidak ada saran cocok.
-    """
     if not formed_text or limit <= 0:
         return []
 
-    # Jika teks berakhir dengan spasi, pengguna belum mengetik huruf untuk kata berikutnya.
     if formed_text.endswith(" "):
         return []
 
@@ -214,13 +226,12 @@ def suggest_words(
     if not last_token:
         return []
 
-    # Ambil karakter alfabet dari token terakhir sebagai prefiks
     prefix = "".join(ch for ch in last_token if ch.isalpha())
     if not prefix:
         return []
 
     prefix_lower = prefix.lower()
-    vocab = DEFAULT_VOCABULARY if vocabulary is None else vocabulary
+    vocab = load_vocabulary() if vocabulary is None else vocabulary
 
     candidates: list[str] = []
     seen: set[str] = set()
@@ -228,7 +239,6 @@ def suggest_words(
     for word in vocab:
         w_lower = word.lower()
         if w_lower.startswith(prefix_lower):
-            # Sesuaikan format casing dengan prefiks input
             if prefix.isupper():
                 formatted = w_lower.upper()
             elif prefix.istitle():
@@ -247,15 +257,6 @@ def suggest_words(
 
 
 def apply_suggestion(formed_text: str, suggestion: str) -> str:
-    """Ganti kata/token parsial terakhir dalam formed_text dengan saran terpilih.
-
-    Mempertahankan kata-kata sebelumnya dan spasi yang sudah ada dalam kalimat.
-
-    Contoh:
-        apply_suggestion("SAYA MAK", "MAKAN") -> "SAYA MAKAN"
-        apply_suggestion("saya mak", "makan") -> "saya makan"
-        apply_suggestion("mak", "makan") -> "makan"
-    """
     if not formed_text:
         return suggestion
 
