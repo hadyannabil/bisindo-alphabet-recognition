@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# Dataset dan cache
+data/external/
+data/processed/
+data/features/
+*.npz
+
+# Model dan arsip besar
+*.joblib
+*.zip
+
+# Build aplikasi
+build/
+dist/
+*.exe
+
+# File sementara
+*.log
+.DS_Store
+.vscode/
+
+# Paket pengembangan lama
+/BISINDO_App_RF_SmartPrediction_v1_20261122/
+/BISINDO_Preprocessing_Features_v1_20261122/
