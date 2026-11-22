@@ -42,8 +42,8 @@ class TextComposer:
     min_confirm_gap: float = 0.7
     _last_confirm_at: float = field(default=float("-inf"), repr=False)
 
-    def confirm(self, letter: str, now: float | None = None) -> bool:
-        if letter not in LETTERS:
+    def confirm(self, letter: str | None, now: float | None = None) -> bool:
+        if not letter or letter not in LETTERS:
             return False
         now = time.monotonic() if now is None else now
         if now - self._last_confirm_at < self.min_confirm_gap:
@@ -61,6 +61,26 @@ class TextComposer:
 
     def clear(self) -> None:
         self.text = ""
+
+    def replace_last_word(self, replacement: str) -> None:
+        """Ganti kata parsial terakhir dengan kata saran terpilih."""
+        word = replacement
+        if self.text and self.text.islower():
+            word = replacement.lower()
+        elif self.text and self.text.isupper():
+            word = replacement.upper()
+
+        if not self.text:
+            self.text = word
+            return
+        if self.text.endswith(" "):
+            self.text += word
+            return
+        idx = self.text.rfind(" ")
+        if idx == -1:
+            self.text = word
+        else:
+            self.text = self.text[: idx + 1] + word
 
 
 
@@ -92,7 +112,7 @@ class AutoConfirmGate:
             return True
         return False
 
-    def mark_manual_confirm(self, letter: str) -> None:
-        if letter in LETTERS:
+    def mark_manual_confirm(self, letter: str | None) -> None:
+        if letter and letter in LETTERS:
             self.candidate = letter
             self.consumed = True
