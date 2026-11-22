@@ -2,12 +2,10 @@
 import sys
 from pathlib import Path
 
-# Pastikan direktori 'src' ada dalam path pencarian modul
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from bisindo_app.core import TextComposer
 from bisindo_app.word_prediction import apply_suggestion, suggest_words
-
 
 def test_suggest_words_empty_text():
     """Uji teks kosong dan None mengembalikan list kosong."""
@@ -69,10 +67,6 @@ def test_suggest_words_no_duplicates_and_limit():
 
 def test_apply_suggestion():
     """Uji penggantian token parsial terakhir dengan kata saran terpilih."""
-    # Contoh alur pada README:
-    # Teks Tersusun : SAYA MAK
-    # Pengguna klik : MAKAN
-    # Hasil teks    : SAYA MAKAN
     assert apply_suggestion("SAYA MAK", "MAKAN") == "SAYA MAKAN"
     assert apply_suggestion("saya mak", "makan") == "saya makan"
     assert apply_suggestion("mak", "makan") == "makan"
@@ -99,27 +93,22 @@ def test_text_composer_replace_last_word():
 def test_full_flow_with_composer():
     """Uji alur lengkap: pengetikan huruf -> saran kata -> pemilihan saran."""
     composer = TextComposer(min_confirm_gap=0)
-    # Pengguna mengonfirmasi huruf S, A, Y, A
     for ch in "SAYA":
         composer.confirm(ch)
     assert composer.text == "saya"
 
-    # Pengguna menambahkan spasi
     composer.add_space()
     assert composer.text == "saya "
-    # Saat spasi, tidak ada saran
+    
     assert suggest_words(composer.text) == []
 
-    # Pengguna mengetik M, A, K
     for ch in "MAK":
         composer.confirm(ch)
     assert composer.text == "saya mak"
 
-    # Prediksi menghasilkan 4 saran
     suggestions = suggest_words(composer.text)
     assert suggestions == ["makan", "makanan", "makna", "makin"]
 
-    # Pengguna memilih saran pertama ("makan")
     chosen = suggestions[0]
     composer.replace_last_word(chosen)
     assert composer.text == "saya makan"

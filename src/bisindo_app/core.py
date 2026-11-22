@@ -42,8 +42,8 @@ class TextComposer:
     min_confirm_gap: float = 0.7
     _last_confirm_at: float = field(default=float("-inf"), repr=False)
 
-    def confirm(self, letter: str, now: float | None = None) -> bool:
-        if letter not in LETTERS:
+    def confirm(self, letter: str | None, now: float | None = None) -> bool:
+        if not letter or letter not in LETTERS:
             return False
         now = time.monotonic() if now is None else now
         if now - self._last_confirm_at < self.min_confirm_gap:
@@ -112,7 +112,7 @@ class AutoConfirmGate:
             return True
         return False
 
-    def mark_manual_confirm(self, letter: str) -> None:
-        if letter in LETTERS:
+    def mark_manual_confirm(self, letter: str | None) -> None:
+        if letter and letter in LETTERS:
             self.candidate = letter
             self.consumed = True

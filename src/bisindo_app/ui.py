@@ -7,15 +7,23 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import sys
 import tkinter as tk
 
 from PIL import Image, ImageDraw, ImageOps, ImageTk
 
-from .camera import CameraWorker
-from .core import AutoConfirmGate, TextComposer
-from .word_prediction import suggest_words
-
 HERE = Path(__file__).resolve().parents[2]
+if str(HERE / "src") not in sys.path:
+    sys.path.insert(0, str(HERE / "src"))
+
+try:
+    from .camera import CameraWorker
+    from .core import AutoConfirmGate, TextComposer
+    from .word_prediction import suggest_words
+except ImportError:
+    from bisindo_app.camera import CameraWorker
+    from bisindo_app.core import AutoConfirmGate, TextComposer
+    from bisindo_app.word_prediction import suggest_words
 BG = "#EAF5FF"
 WHITE = "#FFFFFF"
 NAVY = "#0D3569"
@@ -194,7 +202,6 @@ class PillButton(tk.Canvas):
                         outline=fg if self._hover and self._enabled else "",
                         width=1.3)
         if self.icon:
-            # For the long confirmation caption, keep the caption centered.
             if self.title=="Konfirmasi Huruf / Enter":
                 draw_icon(self,self.icon,35,h/2-1,fg,0.93)
                 self.create_text(w/2+5,h/2-1,text=self.title,fill=fg,
@@ -307,15 +314,15 @@ class BisindoApp:
         self.root.bind("<Control-l>",self._on_clear)
         self.root.bind("<Control-L>",self._on_clear)
 
-        # Webcam-only workflow. The inference worker and model are unchanged.
         self.composer=TextComposer(min_confirm_gap=0.7)
         self.worker=CameraWorker(args.model,args.landmarker,args.camera)
-        self.auto_gate=AutoConfirmGate(hold_seconds=1.8)
+        self.auto_gate=AutoConfirmGate(hold_seconds=1.2)
         self.auto_enabled=False
         self._last_index=-1
-        self._image=None
+        self._image: ImageTk.PhotoImage | None = None
         self._placeholder_size=(0,0)
-        self._stable_letter=None
+        self._stable_letter: str | None = None
+        self._poll_job: str | None = None
         self._raw=tk.StringVar(value="—")
         self._stable=tk.StringVar(value="—")
         self._confidence=tk.StringVar(value="—")
@@ -328,7 +335,6 @@ class BisindoApp:
 
         placeholder=HERE/"assets"/"camera_placeholder.jpg"
         if not placeholder.exists():
-            # Also supports testing this file directly outside its repo folder.
             placeholder=Path(__file__).resolve().parent/"assets"/"camera_placeholder.jpg"
         self._placeholder_source=Image.open(placeholder).convert("RGB")
         self._build()
@@ -406,8 +412,6 @@ class BisindoApp:
         self._build_words()
 
     def _section_title(self,parent,title,*,icon="camera",accent=BLUE,bar=False):
-        # Keep the icon tile smaller than its parent row so the bottom edge
-        # never gets clipped by Tk's fixed-height frame (notably on 768p).
         row_height=44 if self.compact else 50
         icon_size=40 if self.compact else 44
         row=tk.Frame(parent,bg=WHITE,height=row_height)
@@ -495,9 +499,6 @@ class BisindoApp:
         self.formed_text=TextPanel(p,self._text)
         if self.compact:
             self.formed_text.configure(height=66)
-        # Anchor the action buttons above the card's bottom edge so the
-        # rounded lower border and subtle button shadow are never clipped.
-        # On short screens, the text display yields height to these controls.
         row=tk.Frame(p,bg=WHITE)
         row.pack(side="bottom",fill="x",pady=(0,6))
         for i,(name,fn,fill,fg,icon) in enumerate([
@@ -526,26 +527,6 @@ class BisindoApp:
             self.word_buttons.append(button)
         row.grid_rowconfigure(0,weight=1)
 
-    def _build_footer(self):
-        self.footer=tk.Canvas(self.root,bg=BG,bd=0,highlightthickness=0,
-                              height=51 if self.compact else 57)
-        self.footer.pack(fill="x",padx=29,pady=(0,10))
-        self.footer.bind("<Configure>",lambda _e:self._render_footer())
-        self._status.trace_add("write",lambda *_args:self._render_footer())
-
-    def _render_footer(self):
-        self.footer.delete("all")
-        w,h=self.footer.winfo_width(),self.footer.winfo_height()
-        if w<24 or h<18:
-            return
-        rounded_polygon(self.footer,(0,1,w-1,h-2),14,fill="#DBFAF0",outline="#A8ECD8",width=1)
-        self.footer.create_oval(23,h/2-12,47,h/2+12,fill="#0DB792",outline="")
-        self.footer.create_line(29,h/2,34,h/2+5,42,h/2-5,
-                                fill=WHITE,width=2.5,capstyle="round",joinstyle="round")
-        self.footer.create_line(70,14,70,h-14,fill="#93DACB",width=2)
-        self.footer.create_text(90,h/2,text=self._status.get(),anchor="w",
-                                font=(FONT,10),fill=NAVY)
-
     def _toggle_auto(self,enabled):
         self.auto_enabled=enabled
         self.auto_gate.reset()
@@ -566,15 +547,11 @@ class BisindoApp:
     def _show_preview(self,img,*,placeholder=False):
         w=max(20,self.preview.winfo_width())
         h=max(20,self.preview.winfo_height())
-        # Keep a single canvas so the preview itself can have rounded corners.
         bg=Image.new("RGB",(w,h),"#DCEEFF")
         if placeholder:
             img=ImageOps.fit(img,(w,h),method=Image.Resampling.LANCZOS)
             bg.paste(img,(0,0))
         else:
-            # "Cover" the entire camera area, matching the placeholder.
-            # The original frame remains untouched in CameraWorker for inference;
-            # only the display may crop its outer edges to preserve proportions.
             resized=ImageOps.fit(img,(w,h),method=Image.Resampling.BILINEAR,
                                  centering=(0.5,0.5))
             bg.paste(resized,(0,0))
@@ -632,7 +609,7 @@ class BisindoApp:
             if shot.rgb is not None:
                 frame=Image.fromarray(shot.rgb)
                 self._show_preview(frame)
-            if self.auto_enabled and self.auto_gate.update(shot.stable_letter):
+            if self.auto_enabled and shot.stable_letter and self.auto_gate.update(shot.stable_letter):
                 if self.composer.confirm(shot.stable_letter):
                     self._refresh_text()
                     self._status.set(f"Konfirmasi otomatis: huruf {shot.stable_letter} ditambahkan")
@@ -666,12 +643,13 @@ class BisindoApp:
         self._refresh_text()
 
     def confirm(self):
-        if not self._stable_letter:
+        letter = self._stable_letter
+        if not letter:
             self._status.set("Belum ada prediksi stabil. Tahan gestur hingga stabil.")
             return
-        if self.composer.confirm(self._stable_letter):
-            self.auto_gate.mark_manual_confirm(self._stable_letter)
-            self._status.set(f"Huruf {self._stable_letter} ditambahkan")
+        if self.composer.confirm(letter):
+            self.auto_gate.mark_manual_confirm(letter)
+            self._status.set(f"Huruf {letter} ditambahkan")
             self._refresh_text()
         else:
             self._status.set("Konfirmasi terlalu cepat. Coba lagi sesaat.")
@@ -689,7 +667,7 @@ class BisindoApp:
         self._refresh_text()
 
     def close(self):
-        if getattr(self,"_poll_job",None) is not None:
+        if self._poll_job is not None:
             try:
                 self.root.after_cancel(self._poll_job)
             except tk.TclError:
@@ -704,8 +682,8 @@ class BisindoApp:
 
 def main():
     parser=argparse.ArgumentParser(description="BISINDO: pengenalan alfabet dan penyusunan teks")
-    parser.add_argument("--model",default="models/random_forest.joblib")
-    parser.add_argument("--landmarker",default="models/hand_landmarker.task")
+    parser.add_argument("--model",default=str(HERE / "models" / "random_forest.joblib"))
+    parser.add_argument("--landmarker",default=str(HERE / "models" / "hand_landmarker.task"))
     parser.add_argument("--camera",type=int,default=0)
     BisindoApp(parser.parse_args()).run()
 
