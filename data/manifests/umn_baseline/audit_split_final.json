@@ -1,0 +1,119 @@
+{
+  "date": "2026-11-22",
+  "source_file": "hasil_eksperimen_umn_binus.zip/results/umn_rf_v4_PILOT/manifest.csv",
+  "manifest_sha256": "2bde0b77c0a2235673c6a17798492ddd655655849182ac56961e81f563d2c7fb",
+  "manifest_count": 4769,
+  "quarantined": 4,
+  "split_counts": {
+    "TRAIN_PILOT": 3011,
+    "DEV_PILOT": 1001,
+    "RESERVED_PILOT": 753
+  },
+  "active_distinct_paths": 4765,
+  "active_distinct_sha256": 4765,
+  "exact_sha256_cross_split_pairs": 0,
+  "source_proxy_cross_split_groups": 0,
+  "normalized_alias_cross_split_groups": 4,
+  "normalized_alias_groups": [
+    {
+      "normalized_proxy": "backgroundhitamvivov20",
+      "source_proxy_variants": [
+        "backgroundhitam_vivo_v20",
+        "backgroundhitam_vivov20"
+      ],
+      "partitions": [
+        "RESERVED_PILOT",
+        "TRAIN_PILOT"
+      ],
+      "rows_per_partition": {
+        "TRAIN_PILOT": 20,
+        "RESERVED_PILOT": 1
+      },
+      "example_paths": [
+        "A/A_BackgroundHitam_Vivo_V20.jpeg",
+        "B/B_Backgroundhitam_VIVO_V20.jpeg",
+        "C/C_backgroundhitam_vivov20.jpeg",
+        "E/E_backgroundhitam_VIVO_V20.jpeg"
+      ]
+    },
+    {
+      "normalized_proxy": "backgroundputihvivov20",
+      "source_proxy_variants": [
+        "backgroundputih_vivo_v20",
+        "backgroundputih_vivov20"
+      ],
+      "partitions": [
+        "DEV_PILOT",
+        "TRAIN_PILOT"
+      ],
+      "rows_per_partition": {
+        "DEV_PILOT": 20,
+        "TRAIN_PILOT": 1
+      },
+      "example_paths": [
+        "B/B_BackgroundPutih_Vivo_v20.jpeg",
+        "C/C_backgroundputih_vivov20.jpeg",
+        "D/D_backgroundputih_VIVO_V20.jpeg",
+        "E/E_backgroundputih_VIVO_V20.jpeg"
+      ]
+    },
+    {
+      "normalized_proxy": "bajuiphone14pro",
+      "source_proxy_variants": [
+        "baju_iphone_14_pro",
+        "baju_iphone_14pro"
+      ],
+      "partitions": [
+        "DEV_PILOT",
+        "RESERVED_PILOT"
+      ],
+      "rows_per_partition": {
+        "DEV_PILOT": 51,
+        "RESERVED_PILOT": 50
+      },
+      "example_paths": [
+        "A/A _Baju_Iphone_14Pro.jpg",
+        "A/A_Baju_Iphone_14 Pro.jpg",
+        "A/A_Baju_iPhone_14 Pro (2).jpg",
+        "B/B _Baju_Iphone_14Pro.jpg"
+      ]
+    },
+    {
+      "normalized_proxy": "bebasiphone14pro",
+      "source_proxy_variants": [
+        "bebas_iphone_14_pro",
+        "bebas_iphone_14pro"
+      ],
+      "partitions": [
+        "RESERVED_PILOT",
+        "TRAIN_PILOT"
+      ],
+      "rows_per_partition": {
+        "RESERVED_PILOT": 2,
+        "TRAIN_PILOT": 52
+      },
+      "example_paths": [
+        "A/A _Bebas_Iphone_14Pro.jpg",
+        "A/A_Bebas_Iphone_14 Pro.jpg",
+        "A/A_Bebas_iPhone_14 Pro (2).jpg",
+        "B/B_Bebas_Iphone_14 Pro.jpg"
+      ]
+    }
+  ],
+  "test_eligible_count": 700,
+  "test_excluded_due_to_alias_risk_count": 53,
+  "validation_has_normalized_alias_overlap_with_train": true,
+  "all_26_letters_in_each_split": true,
+  "test_eligible_min_per_class": 25,
+  "test_eligible_max_per_class": 29,
+  "reserved_used_in_pilot": false,
+  "signer_independent_verified": false,
+  "pixel_or_phash_cross_split_tested_here": false,
+  "decision": "KEEP ORIGINAL 3011/1001/753 PILOT PARTITIONS; RESTRICT FINAL SCORING TO 700/753 RESERVED WITHOUT RETRAINING",
+  "no_model_or_training_change": true,
+  "notes": [
+    "source_proxy aliases are inferred from filenames; they are not proven to be identical capture sessions",
+    "Exclusion is a conservative risk control, not proof of signer-independent testing",
+    "Original manifest.csv is retained byte-for-byte; no TRAIN/DEV rows modified"
+  ]
+}

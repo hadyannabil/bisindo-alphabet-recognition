@@ -1,0 +1,9 @@
+# Python 3.12 direkomendasikan. Samakan versi scikit-learn saat memuat model dari Codespaces.
+numpy>=1.26,<3
+opencv-python>=4.8,<5
+Pillow>=10,<13
+pillow-heif>=0.18,<2
+mediapipe>=0.10.14,<0.11
+scikit-learn>=1.5,<1.9
+joblib>=1.3,<2
+pytest>=8,<10

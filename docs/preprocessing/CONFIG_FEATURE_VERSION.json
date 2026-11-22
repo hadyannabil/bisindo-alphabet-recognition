@@ -1,0 +1,34 @@
+{
+  "version": "BISINDO-GEOM128-v1.0",
+  "spec_sha256": "96df11781c86b8d376830babeb7f476233f3855771b5c3aa57a5be5f848903b4",
+  "spec": {
+    "feature_version": "BISINDO-GEOM128-v1.0",
+    "image": {
+      "orientation": "EXIF transpose",
+      "colorspace": "RGB8",
+      "resize": "preserve_aspect_to_max_side",
+      "max_side": 640,
+      "crop": false,
+      "mirror": false,
+      "clahe": false,
+      "smoothing": false,
+      "augmentation": false
+    },
+    "mediapipe": {
+      "running_mode": "IMAGE",
+      "num_hands": 2,
+      "min_hand_detection_confidence": 0.5,
+      "min_hand_presence_confidence": 0.5
+    },
+    "features": {
+      "dimensions": 128,
+      "order": "wrist_x_ascending",
+      "coordinates": "x_px,y_px,z_scaled_from_wrist",
+      "center": "mean_of_global_xy_bbox_minmax",
+      "scale": "max(global_bbox_width,global_bbox_height,1px)",
+      "missing": "zero_fill_unoccupied_slot",
+      "presence_mask": "last_two_features",
+      "no_hand": "skip_classification_and_log"
+    }
+  }
+}
