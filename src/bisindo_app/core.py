@@ -62,6 +62,26 @@ class TextComposer:
     def clear(self) -> None:
         self.text = ""
 
+    def replace_last_word(self, replacement: str) -> None:
+        """Ganti kata parsial terakhir dengan kata saran terpilih."""
+        word = replacement
+        if self.text and self.text.islower():
+            word = replacement.lower()
+        elif self.text and self.text.isupper():
+            word = replacement.upper()
+
+        if not self.text:
+            self.text = word
+            return
+        if self.text.endswith(" "):
+            self.text += word
+            return
+        idx = self.text.rfind(" ")
+        if idx == -1:
+            self.text = word
+        else:
+            self.text = self.text[: idx + 1] + word
+
 
 
 @dataclass
