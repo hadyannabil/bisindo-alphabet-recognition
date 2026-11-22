@@ -316,7 +316,7 @@ class BisindoApp:
 
         self.composer=TextComposer(min_confirm_gap=0.4)
         self.worker=CameraWorker(args.model,args.landmarker,args.camera)
-        self.auto_gate=AutoConfirmGate(hold_seconds=0.7)
+        self.auto_gate=AutoConfirmGate(hold_seconds=0.7, release_seconds=0.5)
         self.auto_enabled=False
         self._last_index=-1
         self._image: ImageTk.PhotoImage | None = None
@@ -609,11 +609,14 @@ class BisindoApp:
             if shot.rgb is not None:
                 frame=Image.fromarray(shot.rgb)
                 self._show_preview(frame)
-            if self.auto_enabled and shot.stable_letter and self.auto_gate.update(shot.stable_letter):
-                if self.composer.confirm(shot.stable_letter):
-                    self._refresh_text()
-                    self._status.set(f"Konfirmasi otomatis: huruf {shot.stable_letter} ditambahkan")
-            elif not self.auto_enabled:
+            if self.auto_enabled and shot.rgb is not None and not shot.status.startswith("ERROR"):
+                # Tetap panggil gate saat tidak ada prediksi stabil maupun tangan.
+                # Reset kunci hanya setelah tangan hilang selama >= 0,5 detik.
+                if self.auto_gate.update(shot.stable_letter, hands=shot.hands):
+                    if self.composer.confirm(shot.stable_letter):
+                        self._refresh_text()
+                        self._status.set(f"Konfirmasi otomatis: huruf {shot.stable_letter} ditambahkan")
+            else:
                 self.auto_gate.reset()
         self._poll_job=self.root.after(90,self._poll)
 
