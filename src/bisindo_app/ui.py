@@ -13,6 +13,7 @@ from PIL import Image, ImageDraw, ImageOps, ImageTk
 
 from .camera import CameraWorker
 from .core import AutoConfirmGate, TextComposer
+from .word_prediction import suggest_words
 
 HERE = Path(__file__).resolve().parents[2]
 BG = "#EAF5FF"
@@ -516,13 +517,14 @@ class BisindoApp:
         self._section_title(p,"Prediksi Kata Cerdas",icon="sparkles",accent=BLUE)
         row=tk.Frame(p,bg=WHITE)
         row.pack(fill="both",expand=True,pady=(0,4))
+        self.word_buttons: list[PillButton] = []
         for i in range(4):
             row.grid_columnconfigure(i,weight=1,uniform="suggestions")
-            # Hanya placeholder tampilan; tidak terhubung ke logika prediksi kata.
-            button=PillButton(row,"—",None,fill="#E9F0F8",fg=NAVY,
-                              interactive=False,height=38 if self.compact else 48,
+            button=PillButton(row,"—",None,fill=PALE_BLUE,fg=NAVY,
+                              interactive=True,enabled=False,height=38 if self.compact else 48,
                               font_size=11)
             button.grid(row=0,column=i,sticky="nsew",padx=(0 if i==0 else 5,5 if i<3 else 0))
+            self.word_buttons.append(button)
         row.grid_rowconfigure(0,weight=1)
 
     def _build_footer(self):
@@ -641,6 +643,28 @@ class BisindoApp:
 
     def _refresh_text(self):
         self._text.set(self.composer.text.upper() if self.composer.text else "(belum ada teks)")
+        self._update_suggestions()
+
+    def _update_suggestions(self):
+        if not hasattr(self, "word_buttons"):
+            return
+        suggestions = suggest_words(self.composer.text, limit=4)
+        for i in range(4):
+            btn = self.word_buttons[i]
+            if i < len(suggestions):
+                word = suggestions[i]
+                btn.set_label(word.upper())
+                btn.command = lambda w=word: self._on_select_suggestion(w)
+                btn.set_enabled(True)
+            else:
+                btn.set_label("—")
+                btn.command = None
+                btn.set_enabled(False)
+
+    def _on_select_suggestion(self, word: str):
+        self.composer.replace_last_word(word)
+        self._status.set(f"Kata '{word.upper()}' dipilih")
+        self._refresh_text()
 
     def confirm(self):
         if not self._stable_letter:
