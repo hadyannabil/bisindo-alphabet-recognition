@@ -314,9 +314,9 @@ class BisindoApp:
         self.root.bind("<Control-l>",self._on_clear)
         self.root.bind("<Control-L>",self._on_clear)
 
-        self.composer=TextComposer(min_confirm_gap=0.7)
+        self.composer=TextComposer(min_confirm_gap=0.4)
         self.worker=CameraWorker(args.model,args.landmarker,args.camera)
-        self.auto_gate=AutoConfirmGate(hold_seconds=1.2)
+        self.auto_gate=AutoConfirmGate(hold_seconds=0.7)
         self.auto_enabled=False
         self._last_index=-1
         self._image: ImageTk.PhotoImage | None = None
@@ -470,7 +470,7 @@ class BisindoApp:
         self.auto_toggle=Toggle(toggle_line,self._toggle_auto,bg="#EBF5FF")
         self.auto_toggle.pack(side="left",padx=(0,9))
         label(toggle_line,"Konfirmasi Otomatis",10,NAVY,True,bg="#EBF5FF").pack(side="left")
-        label(auto,"Opsional • stabil 1,2 detik",9,MUTED,bg="#EBF5FF").pack(pady=(0,8))
+        label(auto,"Opsional • stabil 0,7 detik",9,MUTED,bg="#EBF5FF").pack(pady=(0,8))
 
     def _build_prediction(self):
         p=self.pred_card.inner
@@ -530,7 +530,7 @@ class BisindoApp:
     def _toggle_auto(self,enabled):
         self.auto_enabled=enabled
         self.auto_gate.reset()
-        self._status.set("Konfirmasi otomatis aktif: tahan huruf stabil selama 1,8 detik" if enabled
+        self._status.set("Konfirmasi otomatis aktif: tahan huruf stabil selama 0,7 detik" if enabled
                          else "Konfirmasi otomatis nonaktif. Tekan Enter untuk mengonfirmasi.")
 
     def _preview_resized(self,event):
