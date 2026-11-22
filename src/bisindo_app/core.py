@@ -86,33 +86,80 @@ class TextComposer:
 
 @dataclass
 class AutoConfirmGate:
-    """One auto-confirm per uninterrupted stable gesture. Off by default in UI."""
+    """Konfirmasi sekali per gestur; bisa diulang setelah tangan dilepas.
+
+    UI memasok jumlah tangan melalui `hands` untuk debounce pelepasan.
+    Pemanggil lama tanpa argumen `hands` tetap didukung.
+    """
+
     hold_seconds: float = 1.8
     candidate: str | None = None
     since: float | None = None
     consumed: bool = False
+    release_seconds: float = 0.5
+    locked_letter: str | None = None
+    no_hand_since: float | None = None
 
     def reset(self) -> None:
         self.candidate = None
         self.since = None
         self.consumed = False
+        self.locked_letter = None
+        self.no_hand_since = None
 
-    def update(self, letter: str | None, now: float | None = None) -> bool:
+    def update(
+        self, letter: str | None, now: float | None = None, *, hands: int | None = None
+    ) -> bool:
         now = time.monotonic() if now is None else now
-        if letter not in LETTERS:
+
+        # Kompatibilitas untuk pemanggil lama yang belum memberi jumlah tangan.
+        if hands is None and letter not in LETTERS:
             self.reset()
             return False
+
+        # Hanya keadaan tangan benar-benar tidak terdeteksi yang melepas kunci.
+        # Satu frame hilang tidak cukup untuk mengonfirmasi huruf yang sama lagi.
+        if hands is not None and hands <= 0:
+            if self.no_hand_since is None:
+                self.no_hand_since = now
+            elif now - self.no_hand_since >= self.release_seconds:
+                self.reset()
+            return False
+
+        # Jika tangan muncul lagi sebelum batas release, kunci lama tetap aktif.
+        self.no_hand_since = None
+
+        # Prediksi tidak stabil tidak dianggap sebagai pelepasan gestur.
+        # Timer calon huruf baru harus mulai lagi setelah prediksi stabil.
+        if letter not in LETTERS:
+            self.candidate = None
+            self.since = None
+            return False
+
+        # Gestur yang sudah dikonfirmasi tidak boleh terkonfirmasi ulang
+        # selama belum ada pelepasan tangan atau huruf lain yang sah.
+        if letter == self.locked_letter:
+            self.candidate = None
+            self.since = None
+            return False
+
         if self.candidate != letter:
             self.candidate = letter
             self.since = now
             self.consumed = False
             return False
-        if not self.consumed and self.since is not None and now - self.since >= self.hold_seconds:
+
+        if self.since is not None and now - self.since >= self.hold_seconds:
+            self.locked_letter = letter
+            self.candidate = None
+            self.since = None
             self.consumed = True
             return True
         return False
 
     def mark_manual_confirm(self, letter: str | None) -> None:
         if letter and letter in LETTERS:
-            self.candidate = letter
+            self.locked_letter = letter
+            self.candidate = None
+            self.since = None
             self.consumed = True
