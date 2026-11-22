@@ -1,167 +1,189 @@
-# BISINDO Alphabet Recognition with Smart Word Prediction
+# BISINDO Alphabet Recognition
 
-> **Proyek akhir Computer Vision** — prototipe pengenalan alfabet Bahasa Isyarat Indonesia (BISINDO) A–Z melalui webcam, dengan target penyusunan huruf menjadi kata dan prediksi kata berbahasa Indonesia.
+Aplikasi desktop untuk **mengenali alfabet Bahasa Isyarat Indonesia (BISINDO) A–Z melalui webcam** dan menyusunnya menjadi teks. Proyek ini menggunakan **MediaPipe Hand Landmarker** untuk mendeteksi titik tangan serta **Random Forest** untuk mengklasifikasikan huruf. Antarmuka dibangun dengan Python dan Tkinter.
 
-**Status proyek (November 2026): dalam pengembangan.** Deteksi landmark tangan, training model, evaluasi, dan pengenalan huruf melalui webcam lokal sudah berhasil dijalankan. **Word Formation, Text Correction, dan Smart Word Prediction masih menjadi target pengembangan**, belum fitur final yang berfungsi.
+Aplikasi dikembangkan sebagai fondasi pengenalan isyarat dan penyusunan teks. **Prediksi Kata Cerdas** merupakan tahap pengembangan berikutnya dan saat ini **belum aktif**.
 
-## 1. Tujuan dan ruang lingkup
+## Fitur yang Tersedia
 
-Proyek ini bertujuan membuat aplikasi yang menerima gestur alfabet BISINDO melalui webcam dan mengubahnya menjadi huruf. Nantinya pengguna dapat mengonfirmasi huruf, merangkainya menjadi kata, mengoreksi teks, dan memperoleh saran kata bahasa Indonesia.
+- Pengenalan 26 huruf (A–Z) dari kamera secara real-time, dengan dukungan deteksi satu atau dua tangan.
+- Visualisasi titik landmark tangan dan informasi hasil prediksi.
+- Stabilisasi prediksi sebelum huruf dikonfirmasi.
+- Konfirmasi huruf secara manual melalui tombol **Konfirmasi Huruf** atau **Enter**.
+- Opsi **Konfirmasi Otomatis** setelah gestur stabil selama sekitar 1,8 detik.
+- **Teks Tersusun** dengan tombol **Hapus**, **Spasi**, dan **Bersihkan**.
+- Empat kotak **Prediksi Kata Cerdas** sebagai *placeholder* UI (belum menghasilkan saran atau menerima klik).
 
-Fokus proyek adalah **alfabet/fingerspelling A–Z**, **bukan** penerjemahan bahasa isyarat secara menyeluruh atau pengenalan kalimat kontinu. Beberapa huruf melibatkan dua tangan; kesesuaian contoh gestur pada dataset dengan penggunaan BISINDO perlu diperiksa, termasuk kemungkinan variasi daerah.
-
-## 2. Arsitektur sistem
-
-### Pipeline training
-
-```text
-Gambar BISINDO A–Z (Kaggle)
-    → Audit label & split train/validation
-    → OpenCV: baca gambar dan konversi BGR → RGB
-    → MediaPipe Hand Landmarker (maks. 2 tangan)
-    → Normalisasi koordinat, ekstraksi 128 fitur
-    → Random Forest (scikit-learn)
-    → Evaluasi Accuracy, Macro-F1, per kelas, confusion matrix
-    → Model tersimpan (.joblib)
-```
-
-### Pipeline inference saat ini
-
-```text
-Webcam laptop → OpenCV lokal → MediaPipe Hands
-    → 128 fitur landmark → Random Forest
-    → Prediksi huruf + skor + visualisasi landmark
-```
-
-### Rencana pipeline aplikasi akhir
-
-```text
-Prediksi huruf antarframe → Stabilisasi → Konfirmasi huruf
-    → Letter Buffer / Word Formation → Smart Word Prediction
-    → Koreksi, hapus, spasi, dan output teks
-```
-
-## 3. Teknologi
-
-| Komponen | Teknologi | Fungsi |
-|---|---|---|
-| Bahasa | Python | Pengembangan pipeline |
-| Pengolahan citra | OpenCV, NumPy | Membaca webcam, konversi warna, visualisasi |
-| Ekstraksi gestur | MediaPipe Hand Landmarker | 21 landmark per tangan, hingga 2 tangan |
-| Klasifikasi | scikit-learn Random Forest | Pengenalan alfabet A–Z |
-| Model | joblib | Menyimpan dan memuat model |
-| Analisis | Matplotlib, CSV/JSON | Evaluasi dan dokumentasi eksperimen |
-| Demo saat ini | OpenCV di Windows | Inferensi webcam real-time dalam satu jendela |
-| Eksperimen UI sebelumnya | Gradio, FastRTC | Streaming webcam melalui Codespaces |
-
-Topik Computer Vision yang relevan: representasi citra, konversi ruang warna, transformasi intensitas, filtering spasial (*smoothing*), dan estimasi pose/landmark tangan. **Eksperimen intensitas dan smoothing belum diklaim sebagai peningkatan performa yang teruji.**
-
-## 4. Dataset dan ekstraksi fitur
-
-Sumber dataset: [Indonesian Sign Language (BISINDO) — Kaggle](https://www.kaggle.com/datasets/agungmrf/indonesian-sign-language-bisindo).
-
-Dataset memiliki pembagian `images/train/A-Z` dan `images/val/A-Z`. Anotasi YOLO juga tersedia, tetapi klasifikasi Random Forest menggunakan **nama folder sebagai label huruf**, bukan nomor kelas pada file anotasi.
-
-| Statistik | Nilai |
-|---|---:|
-| Total gambar | 11.470 |
-| Training / validation | 9.169 / 2.301 |
-| Berhasil diekstraksi — training | 7.549 (82,33%) |
-| Berhasil diekstraksi — validation | 1.910 (83,01%) |
-| Sampel dengan landmark (total) | 9.459 |
-| Sampel tanpa landmark | 2.011 |
-| Dimensi fitur | 128 |
-
-**Skema fitur v1:** dua slot tangan × 21 landmark × koordinat `(x, y, z)` = 126 fitur, ditambah dua penanda keberadaan tangan = **128 fitur**. Koordinat dinormalisasi terhadap ruang bersama tangan yang terdeteksi; tangan diurutkan berdasarkan posisi horizontal pergelangan. Bila hanya satu tangan berhasil terdeteksi, slot lainnya diisi nol.
-
-Konfigurasi baseline MediaPipe: sisi gambar terpanjang maksimal 640 piksel, `num_hands=2`, `min_hand_detection_confidence=0.3`, dan `min_hand_presence_confidence=0.3`. Pengujian cropping menggunakan anotasi YOLO belum menunjukkan peningkatan tingkat deteksi dibandingkan penggunaan gambar penuh pada sampel audit.
-
-Dataset mencakup gambar yang dirotasi, dibalik (*flip*), dan diaugmentasi. Hubungan antara gambar asli dan augmentasinya lintas split masih perlu pemeriksaan lebih lanjut.
-
-## 5. Progres yang sudah dicapai
-
-- [x] Menyiapkan lingkungan Python dan pustaka pendukung di GitHub Codespaces.
-- [x] Membuat prototipe webcam Gradio dan mendeteksi landmark satu atau dua tangan.
-- [x] Mengunduh dan mengaudit dataset BISINDO 26 huruf.
-- [x] Memvisualisasikan sampel gambar asli dan hasil augmentasi.
-- [x] Menguji parameter MediaPipe serta cropping YOLO pada sampel dataset.
-- [x] Mengekstraksi landmark menjadi fitur numerik (128 dimensi).
-- [x] Melatih Random Forest v1 dan mengevaluasi hasil klasifikasi.
-- [x] Mengaudit fitur validation yang identik dengan training.
-- [x] Melatih Random Forest v2 dengan percobaan pembobotan sampel A, M, N; hasilnya belum melampaui v1.
-- [x] Menjalankan deteksi dan prediksi alfabet pada webcam **lokal via OpenCV**, yang lebih responsif daripada streaming Codespaces.
-- [x] Membuat eksperimen pembanding referensi dataset vs webcam, beserta log prediksi manual.
-- [x] Menyiapkan alat pengujian stabilitas prediksi antarframe (`test_stability.py`).
-
-**Belum selesai:** analisis hasil uji stabilitas kontinu, validasi kinerja pada pengguna baru, pengembangan fitur teks/kata, dan finalisasi UI demo.
-
-## 6. Hasil evaluasi model
-
-| Metrik | Random Forest v1 | Random Forest v2 |
-|---|---:|---:|
-| Validation Accuracy (sampel berlandmark) | **97,12%** | 96,96% |
-| Validation Macro-F1 | **97,08%** | 96,94% |
-| Accuracy setelah mengeluarkan fitur identik | **96,51%** | 96,32% |
-| Macro-F1 setelah mengeluarkan fitur identik | **96,41%** | 96,25% |
-
-Pada v1, sebanyak **1.855 dari 1.910** sampel validation berlandmark diprediksi benar. Jika seluruh 2.301 gambar validation dijadikan penyebut dan kegagalan deteksi dihitung sebagai kegagalan pengenalan, keberhasilan pipeline adalah **80,62%**.
-
-Audit menemukan **332 sampel validation** yang fitur numeriknya identik dengan fitur training menurut metode perbandingan yang digunakan. Setelah sampel tersebut dikeluarkan, akurasi masih **96,51%**. Meski begitu, hasil ini **belum membuktikan tidak adanya data leakage**, sebab foto hasil augmentasi dapat tetap berkaitan tanpa memiliki fitur yang sama persis.
-
-Eksperimen Random Forest v2 menggunakan bobot lebih tinggi untuk sampel dua tangan pada huruf A, M, dan N. Hasilnya tidak meningkatkan validation; karena itu **Random Forest v1 tetap digunakan sebagai baseline**.
-
-Dalam pengujian webcam manual, sejumlah prediksi Top-1 sudah sesuai dengan huruf yang diuji, tetapi skor yang rendah dapat membuatnya ditolak oleh threshold. Frame yang disimpan secara manual **tidak cukup** untuk menyimpulkan akurasi webcam secara keseluruhan.
-
-## 7. Permasalahan yang sedang ditangani
-
-1. **Perbedaan dataset dan webcam (*domain shift*):** model cukup baik di validation tetapi belum konsisten pada gestur pengguna baru.
-2. **Deteksi tangan tidak lengkap:** beberapa foto gestur dua tangan, termasuk contoh huruf N, hanya menghasilkan landmark satu tangan.
-3. **Skor vs keputusan:** prediksi Top-1 benar bisa tersembunyi jika skor berada di bawah ambang; skor Random Forest bukan jaminan probabilitas terkalibrasi.
-4. **Stabilitas real-time:** prediksi bisa berubah antarfame dan perlu mekanisme konfirmasi huruf.
-5. **Kualitas evaluasi:** data augmentasi berpotensi menimbulkan kemiripan lintas split; diperlukan pengujian yang benar-benar independen.
-6. **Validasi gestur:** label dan contoh dataset perlu ditinjau, tidak otomatis menjadi standar tunggal BISINDO.
-
-## 8. Roadmap pengembangan
-
-### Prioritas berikutnya — kualitas pengenalan
-
-- [ ] Jalankan **pengujian stabilitas prediksi per frame** pada webcam lokal dan analisis `frame_log.csv` serta `session_summary.csv`.
-- [ ] Petakan kesalahan per huruf, termasuk apakah satu atau dua tangan yang terdeteksi.
-- [ ] Periksa kualitas data dan kemungkinan *leakage* akibat augmentasi.
-- [ ] Uji penyesuaian fitur, preprocessing, atau model alternatif **hanya jika hasil evaluasi mendukung**; bandingkan dengan RF v1 pada data yang sama.
-
-### Target fitur produk
-
-- [ ] **Temporal smoothing** agar hasil tidak mudah berganti setiap frame.
-- [ ] **Konfirmasi huruf** dan pencegahan huruf berulang ketika gestur ditahan.
-- [ ] **Word Formation:** menyusun huruf yang dikonfirmasi menjadi kata.
-- [ ] **Text Correction:** hapus huruf, spasi, koreksi, dan reset.
-- [ ] **Smart Word Prediction:** rekomendasi kata bahasa Indonesia melalui kamus, prefix matching, dan/atau edit distance.
-- [ ] Penyempurnaan antarmuka dan pengujian end-to-end untuk demo akhir.
-
-## 9. Menjalankan prototipe webcam lokal
-
-Contoh lingkungan: **Windows, Python 3.12**, model yang telah diekspor dari Codespaces, dan aplikasi OpenCV lokal.
-
-```powershell
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install opencv-python mediapipe numpy scikit-learn joblib
-.\.venv\Scripts\python.exe local_webcam.py
-```
-
-Contoh struktur workspace lokal:
+## Struktur Proyek
 
 ```text
 bisindo-alphabet-recognition/
-├── local_webcam.py
+├── assets/
+│   └── camera_placeholder.jpg      # Ilustrasi saat kamera belum aktif
+├── data/
+│   ├── external/                   # Dataset asli (lokal, tidak masuk Git)
+│   ├── manifests/umn_baseline/     # Manifest dataset
+│   └── processed/                  # Cache fitur (lokal, tidak masuk Git)
+├── docs/                           # Dokumentasi teknis
 ├── models/
-│   ├── bisindo_rf_v1.joblib
-│   └── hand_landmarker.task
-└── .venv/
+│   ├── hand_landmarker.task        # Model deteksi landmark tangan
+│   ├── metrics.json                # Metadata model aplikasi
+│   └── random_forest.joblib        # Model klasifikasi (disediakan terpisah)
+├── results/umn_baseline/           # Ringkasan evaluasi baseline
+├── src/
+│   ├── bisindo_app/
+│   │   ├── ui.py                   # Antarmuka desktop
+│   │   ├── camera.py               # Kamera dan inferensi real-time
+│   │   ├── core.py                 # Stabilisasi, konfirmasi, penyusunan teks
+│   │   ├── model.py                # Pemuatan model klasifikasi
+│   │   └── smoke.py                # Pengujian fungsi dasar
+│   └── bisindo_preproc/
+│       ├── pipeline.py             # Preprocessing dan ekstraksi 128 fitur
+│       └── extract_dataset.py      # Ekstraksi fitur dataset
+├── tests/                          # Unit test
+├── training/
+│   └── train_rf_baseline.py        # Script training baseline
+├── .gitignore
+├── requirements.txt
+├── run_windows.bat                  # Menjalankan aplikasi di Windows
+└── README.md
 ```
 
-> **Catatan sinkronisasi:** struktur di atas mencerminkan workspace lokal/Codespaces. File eksperimen dan artefak model yang dibahas dalam dokumentasi **belum tentu sudah di-commit ke branch `main` GitHub**. Periksa keberadaan file sebelum menjalankan aplikasi. Model `joblib` hanya boleh dimuat dari sumber tepercaya, dan versi dependensi perlu kompatibel dengan lingkungan training.
+> Dataset gambar asli, cache fitur, dan model `random_forest.joblib` tidak disertakan dalam Git. **Dataset tidak diperlukan untuk menjalankan aplikasi** jika model klasifikasi sudah tersedia.
 
-## 10. Batasan penggunaan
+## Menjalankan Aplikasi di Windows (Lokal)
 
-Proyek ini adalah **prototipe pembelajaran Computer Vision**, bukan penerjemah BISINDO tersertifikasi dan bukan pengganti penerjemah bahasa isyarat profesional. Performa dataset tidak boleh disamakan dengan akurasi pada semua pengguna, kondisi pencahayaan, atau variasi BISINDO.
+### 1. Persiapan
+
+Pastikan tersedia:
+
+- **Python 3.12** (direkomendasikan) dan Git.
+- Webcam yang dapat digunakan.
+- File `models/random_forest.joblib` dari pemilik/pengelola proyek. File ini belum tersedia sebagai unduhan otomatis dari repository.
+- File `models/hand_landmarker.task` dan `models/metrics.json` yang sudah ada dalam repository.
+
+### 2. Unduh repository
+
+Buka **PowerShell** atau terminal Windows:
+
+```powershell
+git clone https://github.com/hadyannabil/bisindo-alphabet-recognition.git
+cd bisindo-alphabet-recognition
+```
+
+> Gunakan branch yang berisi versi aplikasi terbaru apabila perubahan belum digabungkan ke `main`.
+
+### 3. Buat virtual environment dan instal dependensi
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+### 4. Letakkan model klasifikasi
+
+Simpan file yang diperoleh dari pengelola proyek di:
+
+```text
+models/random_forest.joblib
+```
+
+Pastikan nama file sesuai. Model ini harus cocok dengan pipeline fitur `BISINDO-GEOM128-v1.0` (**128 fitur, 26 kelas**). Jangan menggunakan model RF versi eksperimen lain tanpa pemeriksaan kompatibilitas.
+
+### 5. Jalankan aplikasi
+
+Dari folder utama repository:
+
+```powershell
+.\run_windows.bat
+```
+
+Atau jalankan secara manual:
+
+```powershell
+$env:PYTHONPATH = "src"
+.\.venv\Scripts\python.exe -m bisindo_app.ui
+```
+
+Jika ingin mencoba indeks kamera lain (misalnya kamera kedua):
+
+```powershell
+.\run_windows.bat --camera 1
+```
+
+Di aplikasi, aktifkan kamera, peragakan isyarat, lalu konfirmasi huruf ketika prediksi sudah stabil. Gunakan **Spasi**, **Hapus**, atau **Bersihkan** untuk mengatur teks hasil pengenalan.
+
+### Pengujian (opsional)
+
+```powershell
+$env:PYTHONPATH = "src"
+.\.venv\Scripts\python.exe -m pytest -q tests
+.\.venv\Scripts\python.exe -m bisindo_app.smoke
+```
+
+Unit test tidak menggantikan pengujian kamera dan tampilan langsung pada komputer pengguna.
+
+## Pengembangan Berikutnya: Prediksi Kata Cerdas
+
+**Bagian ini disiapkan untuk anggota tim yang mengembangkan Smart Word Prediction.** Fitur tersebut belum diimplementasikan: empat kotak saran di UI saat ini hanya menampilkan tanda `—` dan tidak dapat diklik.
+
+### Tujuan
+
+Memberikan hingga **empat saran kata bahasa Indonesia** berdasarkan huruf/kata yang sudah masuk ke **Teks Tersusun**, agar pengguna lebih cepat menyelesaikan kata tanpa harus mengisyaratkan setiap huruf.
+
+Contoh alur yang diharapkan:
+
+```text
+Teks Tersusun : SAYA MAK
+Saran kata    : MAKAN | MAKANAN | MAKNA | MAKIN
+Pengguna klik : MAKAN
+Hasil teks    : SAYA MAKAN
+```
+
+*Contoh tersebut hanya ilustrasi perilaku fitur, bukan hasil prediksi dari implementasi yang sudah ada.*
+
+### Pembagian Tanggung Jawab
+
+| Komponen | Tugas |
+|---|---|
+| `src/bisindo_app/core.py` | Menyimpan teks hasil konfirmasi melalui `TextComposer`; jangan mengganggu proses ini. |
+| `src/bisindo_app/ui.py` | Mengambil teks tersusun dan menampilkan hingga empat saran di bagian **Prediksi Kata Cerdas**. |
+| **Modul baru** `src/bisindo_app/word_prediction.py` | Menangani logika pemrosesan teks, pemilihan kandidat, dan pemeringkatan saran kata. |
+| `tests/` | Menambahkan pengujian untuk prediksi kata dan integrasi ke teks tersusun. |
+
+### Kontrak Integrasi yang Disarankan
+
+Buat fungsi terpisah dengan antarmuka sederhana, misalnya:
+
+```python
+def suggest_words(formed_text: str, limit: int = 4) -> list[str]:
+    """Kembalikan maksimal `limit` kandidat kata tanpa mengubah teks input."""
+```
+
+Ketentuan integrasi:
+
+1. **Input berasal dari `TextComposer.text`**, yaitu teks yang sudah dikonfirmasi, **bukan** prediksi huruf mentah atau prediksi stabil sementara dari webcam.
+2. Untuk melengkapi kata, gunakan **token terakhir yang sedang diketik**. Contoh: `saya mak` menggunakan `mak` sebagai prefiks. Pertahankan kata-kata sebelumnya.
+3. UI memperbarui saran setelah teks berubah: **Konfirmasi Huruf** (manual/otomatis), **Hapus**, **Spasi**, atau **Bersihkan**. Titik pembaruan yang dapat digunakan ada di `BisindoApp._refresh_text()` pada `ui.py`.
+4. Di `BisindoApp._build_words()`, empat `PillButton` yang sekarang masih *placeholder* perlu disimpan sebagai referensi, diberi label dari hasil prediksi, dan baru diaktifkan jika kandidat tersedia.
+5. Saat saran dipilih, **ganti hanya kata parsial terakhir** dalam `TextComposer.text` dengan kandidat terpilih; jangan menimpa seluruh kalimat.
+6. Ketika teks kosong, token terakhir kosong (misalnya tepat setelah Spasi), atau tidak ada kandidat, tampilkan keadaan kosong/nonaktif. Penanganan prediksi kata berikutnya setelah spasi dapat ditambahkan sebagai pengembangan terpisah.
+7. Pisahkan logika prediksi kata dari MediaPipe, Random Forest, `CameraWorker`, dan pipeline fitur 128 dimensi. **Tidak perlu retraining model pengenal huruf** untuk menambahkan fitur ini.
+
+Metode pencarian/pemeringkatan kandidat (misalnya kosakata, frekuensi kata, *prefix matching*, atau model bahasa) dapat dipilih dan diuji oleh pengembang fitur. Pastikan sumber kosakata, aturan normalisasi teks, dan keterbatasannya didokumentasikan.
+
+### Kriteria Selesai
+
+- Empat kotak saran dapat menampilkan **0–4 kata relevan**, tanpa duplikat.
+- Saran berubah ketika pengguna menambah, menghapus, atau membersihkan teks.
+- Pemilihan saran memperbarui **Teks Tersusun** dengan benar, termasuk untuk kalimat yang memiliki spasi.
+- Saat tidak ada saran, UI tetap stabil dan tidak menampilkan kata lama.
+- Fungsi pengenal huruf, konfirmasi, dan kontrol teks tetap berjalan; unit test lama tidak rusak.
+- Ada unit test khusus untuk teks kosong, satu kata, beberapa kata, saran tidak ditemukan, serta pemilihan saran.
+
+## Status
+
+**Sudah tersedia:** pengenalan alfabet, stabilisasi prediksi, konfirmasi huruf, Teks Tersusun, dan UI desktop.
+
+**Pengembangan berikutnya:** Prediksi Kata Cerdas (logika, integrasi empat kotak saran, dan pengujiannya).
