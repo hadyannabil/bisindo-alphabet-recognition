@@ -470,7 +470,7 @@ class BisindoApp:
         self.auto_toggle=Toggle(toggle_line,self._toggle_auto,bg="#EBF5FF")
         self.auto_toggle.pack(side="left",padx=(0,9))
         label(toggle_line,"Konfirmasi Otomatis",10,NAVY,True,bg="#EBF5FF").pack(side="left")
-        label(auto,"Opsional • stabil 1,8 detik",9,MUTED,bg="#EBF5FF").pack(pady=(0,8))
+        label(auto,"Opsional • stabil 1,2 detik",9,MUTED,bg="#EBF5FF").pack(pady=(0,8))
 
     def _build_prediction(self):
         p=self.pred_card.inner

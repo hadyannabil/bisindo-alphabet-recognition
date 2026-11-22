@@ -1,26 +1,3 @@
-"""Modul Prediksi Kata Cerdas (Smart Word Prediction) untuk BISINDO.
-
-Sumber Kosakata:
-    Kosakata frekuensi tinggi bahasa Indonesia (KBBI umum dan percakapan sehari-hari)
-    yang mencakup kata ganti, kata kerja, kata benda, kata sifat, angka, serta istilah
-    yang relevan dengan BISINDO dan komunikasi visual sehari-hari.
-
-Aturan Normalisasi Teks:
-    - Pemrosesan bersifat case-insensitive saat pencocokan awalan (prefix matching).
-    - Menjaga bentuk huruf (casing) dari token terakhir pada kata saran:
-        * Jika input uppercase (misal 'MAK'), saran yang dikembalikan berupa UPPERCASE ('MAKAN').
-        * Jika input titlecase (misal 'Mak'), saran berupa Titlecase ('Makan').
-        * Jika input lowercase (misal 'mak'), saran berupa lowercase ('makan').
-    - Input dipisahkan berdasarkan spasi untuk mengambil kata/token parsial terakhir.
-    - Kandidat disaring agar tidak ada duplikasi kata dan dibatasi maksimal `limit`.
-
-Keterbatasan:
-    - Fitur ini berfokus pada pelengkapan kata (word completion) berdasarkan prefiks
-      token terakhir yang sedang diketik.
-    - Ketika teks kosong atau berakhir dengan spasi (tepat setelah spasi), saran dikosongkan
-      (prediksi kata berikutnya / next-word prediction setelah spasi disiapkan untuk tahap
-      pengembangan terpisah sesuai spesifikasi).
-"""
 from __future__ import annotations
 
 from functools import lru_cache
@@ -32,11 +9,6 @@ DICTIONARY_PATH = Path(__file__).resolve().parent / "data" / "indonesian_words.t
 
 @lru_cache(maxsize=4)
 def load_vocabulary(filepath: Path | str | None = None) -> list[str]:
-    """Muat daftar kosakata bahasa Indonesia dari file korpus teks.
-
-    Mendukung pemuatan hingga puluhan ribu kata secara otomatis dengan caching di memori.
-    Jika file tidak ditemukan atau gagal dibaca, otomatis fallback ke DEFAULT_VOCABULARY.
-    """
     path = DICTIONARY_PATH if filepath is None else Path(filepath)
     if not path.exists():
         return DEFAULT_VOCABULARY
