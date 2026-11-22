@@ -381,7 +381,7 @@ class BisindoApp:
     def _build(self):
         self._header()
         outer=tk.Frame(self.root,bg=BG)
-        outer.pack(fill="both",expand=True,padx=25,pady=(0,6))
+        outer.pack(fill="both",expand=True,padx=25,pady=(0,40))
         outer.grid_rowconfigure(0,weight=1)
         outer.grid_columnconfigure(0,weight=53,minsize=510,uniform="columns")
         outer.grid_columnconfigure(1,weight=47,minsize=480,uniform="columns")
@@ -403,7 +403,6 @@ class BisindoApp:
         self._build_prediction()
         self._build_text()
         self._build_words()
-        self._build_footer()
 
     def _section_title(self,parent,title,*,icon="camera",accent=BLUE,bar=False):
         # Keep the icon tile smaller than its parent row so the bottom edge
