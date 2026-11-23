@@ -54,7 +54,7 @@ def label(parent, value, size=11, color=NAVY, bold=False, bg=WHITE, **kwargs):
                     font=(FONT, size, "bold" if bold else "normal"), **kwargs)
 
 
-def draw_icon(canvas, name, cx, cy, color, scale=1):
+def draw_icon(canvas, name, cx, cy, color, scale: float = 1.0):
     """Small vector icons, drawn without any extra icon packages."""
     t = max(1.8, 2.1*scale)
     kw = {"fill": color, "width": t, "capstyle": "round", "joinstyle": "round"}

@@ -4,3 +4,5 @@ testpaths = ["tests"]
 
 [tool.pyright]
 extraPaths = ["src"]
+venvPath = "."
+venv = ".venv"
